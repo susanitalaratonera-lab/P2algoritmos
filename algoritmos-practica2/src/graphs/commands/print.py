@@ -26,8 +26,11 @@ def print(graph: Graph | None) -> Graph:
     Raises:
         ValueError: Se o grafo é None.
     """
-    # TODO: [Práctica Alumno]
-    # 1. Validar que o grafo non sexa None (lanzar ValueError en caso contrario).
-    # 2. Imprimir o grafo en consola (usar `builtins.print(graph)` para evitar conflitos co nome da función).
-    # 3. Devolver o grafo sen modificacións.
-    ...
+    if graph is None:
+        builtins.print("NO GRAPH FOUND")
+        return graph
+
+    # `builtins.print` é o print de Python (esta función tapa o nome `print`)
+    builtins.print("GRAPH CONTENT:")
+    builtins.print(graph)
+    return graph

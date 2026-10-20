@@ -27,9 +27,16 @@ def find_cut_vertices(graph: Graph | None) -> Graph:
     Raises:
         ValueError: Se o grafo é None.
     """
-    # TODO: [Práctica Alumno]
-    # 1. Validar que o grafo non sexa None (lanzar ValueError en caso contrario).
-    # 2. Obter os vértices de corte chamando a `graph.find_cut_vertices()`.
-    # 3. Formatear e imprimir os nomes dos nodos críticos atopados e a cantidade total.
-    # 4. Devolver o grafo orixinal.
-    ...
+    if graph is None:
+        print("NO GRAPH FOUND")
+        return graph
+
+    try:
+        cut_vertices = sorted(graph.find_cut_vertices())
+    except RuntimeError:
+        # So se definen para grafos non dirixidos (os de LOAD --power son dirixidos)
+        print("CUT VERTICES ONLY AVAILABLE FOR UNDIRECTED GRAPHS")
+        return graph
+    names = ", ".join(node.name for node in cut_vertices)
+    print(f"CUT VERTICES: [{names}]")
+    return graph

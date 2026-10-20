@@ -36,9 +36,21 @@ def travel(
     Raises:
         ValueError: Se o grafo é None, o nodo orixe non existe ou o tipo de percorrido non é válido.
     """
-    # TODO: [Práctica Alumno]
-    # 1. Validar que o grafo non sexa None e que o nodo orixe exista no mesmo.
-    # 2. Converter `order_type` ao valor do enum `Order` (ex: `Order[order_type.upper()]`), lanzando ValueError se non é válido.
-    # 3. Executar `graph.travel(origin_node, order=order_enum)` para obter a lista de nodos visitados.
-    # 4. Imprimir a secuencia de nodos visitados por pantalla e devolver o grafo.
-    ...
+    if graph is None:
+        print("NO GRAPH FOUND")
+        return graph
+
+    origin = graph.find_by_name(origin_name)
+    if origin is None:
+        print(f"NODE {origin_name} NOT PRESENT IN GRAPH")
+        return graph
+
+    try:
+        order = Order[order_type.upper()]
+    except KeyError:
+        raise ValueError(f"Tipo de percorrido '{order_type}' non válido (usa WIDTH ou DEPTH).")
+
+    visited = graph.travel(origin, order=order)
+    names = ", ".join(node.name for node in visited)
+    print(f"TRAVEL {order.name} FROM {origin.name}: [{names}]")
+    return graph
