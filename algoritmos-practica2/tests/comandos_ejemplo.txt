@@ -1,0 +1,20 @@
+# Script de exemplo para probar o intérprete a man.
+# Executar dende a carpeta src/graphs:
+#     python interpreter.py ../../tests/comandos_ejemplo.txt
+
+# Sen grafo cargado
+PRINT
+
+# Radio fixo de 40000 km (grafo non dirixido)
+LOAD ../../data.json 40000
+TRAVEL ISS WIDTH
+TRAVEL ISS DEPTH
+TRAVEL Pluto WIDTH
+COMPONENTS
+FIND_CUT_VERTICES
+PATH ISS Meteosat-11
+PATH ISS "Voyager 1"
+PATH ISS Pluto
+
+# Volver cargar os mesmos datos non engade nada
+LOAD ../../data.json 40000
