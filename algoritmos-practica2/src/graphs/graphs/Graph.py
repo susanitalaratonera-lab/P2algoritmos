@@ -175,23 +175,75 @@ class Graph[T, Q]:
         :return: Lista ordenada de vértices visitados.
         :raises ValueError: Se o nodo de partida non existe no grafo.
         """
-        # TODO: [Práctica Alumno]
-        # 1. Validar que o nodo inicial existe no grafo (lanzar ValueError se non existe).
-        # 2. Implementar o percorrido segundo o tipo solicitado:
-        #    - Order.WIDTH: Búsqueda en Anchura (BFS) usando unha cola.
-        #    - Order.DEPTH: Búsqueda en Profundidade (DFS) usando unha pila.
-        # 3. Garantir un percorrido determinista ordenando os veciños antes de procesalos.
-        # 4. Devolver a lista cos vértices na orde exacta en que foron visitados.
-        ...
-        
+        if not self.contains(start):
+            raise ValueError(f"O nodo '{start}' non existe no grafo.")
+
+        # Percorrido en profundidade (DFS): reutiliza a árbore de expansión
+        if order == Order.DEPTH:
+            visited, _ = self.__spanning_tree(start)
+            return visited
+
+        # Percorrido en anchura (BFS): cola FIFO
+        visited: list[T] = []
+        seen: set[T] = {start}       # Nodos xa engadidos á cola (para non repetilos)
+        queue: deque[T] = deque([start])
+        while queue:
+            vertex = queue.popleft()  # Saca polo principio (o máis antigo)
+            visited.append(vertex)
+            # Veciños en orde alfabética para que o percorrido sexa determinista
+            for neighbour in sorted(self.adjacent_vertices(vertex)):
+                if neighbour not in seen:
+                    seen.add(neighbour)
+                    queue.append(neighbour)
+        return visited
+
+    def __spanning_tree(self: typing.Self, start: T) -> tuple[list[T], dict[T, T | None]]:
+        """
+        Realiza un percorrido en profundidade (DFS) e constrúe a súa árbore de expansión.
+
+        :param start: Nodo raíz do percorrido.
+        :return: Tupla con (lista de nodos na orde DFS, dicionario fillo -> pai na árbore).
+                 O pai da raíz é None.
+        """
+        visited: list[T] = []
+        parent: dict[T, T | None] = {}
+        # A pila garda parellas (nodo, pai dende o que se descubriu)
+        stack: deque[tuple[T, T | None]] = deque([(start, None)])
+        while stack:
+            vertex, vertex_parent = stack.pop()  # Saca polo final (o máis recente)
+            if vertex in parent:
+                continue  # Xa visitado por outro camiño
+            parent[vertex] = vertex_parent
+            visited.append(vertex)
+            # Apílanse en orde inversa para que o alfabeticamente menor saia primeiro
+            for neighbour in sorted(self.adjacent_vertices(vertex), reverse=True):
+                if neighbour not in parent:
+                    stack.append((neighbour, vertex))
+        return visited, parent
+
+    def reverse(self: typing.Self) -> Graph[T, Q]:
+        """Devolve o grafo trasposto (mesmos vértices coas arestas en sentido contrario)."""
+        return Graph(
+            set(self.__vertices),
+            {(target, source, weight) for source, target, weight in self.edges},
+            self.__directed,
+        )
+
+    def subgraph(self: typing.Self, vertices: set[T]) -> Graph[T, Q]:
+        """Devolve o subgrafo formado polos vértices indicados e as arestas entre eles."""
+        return Graph(
+            set(vertices),
+            {
+                (source, target, weight)
+                for source, target, weight in self.edges
+                if source in vertices and target in vertices
+            },
+            self.__directed,
+        )
+
     def is_connected(self: typing.Self) -> bool:
         """Indica se o grafo forma unha única compoñente conexa."""
-
-        # TODO: [Práctica Alumno]
-        # 1. Comprobar se o grafo é conexo (ou fortemente conexo se é dirixido) 
-        #    verificando o número de compoñentes conexas obtidas.
-        # 2. Devolver True se o grafo forma unha única compoñente, False en caso contrario.
-        ...
+        return len(self.connected_components()) == 1
 
     def connected_components(self: typing.Self) -> set[frozenset[T]]:
         """
@@ -199,13 +251,20 @@ class Graph[T, Q]:
 
         :return: Conxunto de conxuntos inmutables coas distintas compoñentes conexas.
         """
-        # TODO: [Práctica Alumno]
-        # 1. Percorrer os vértices pendentes do grafo para calcular as súas compoñentes conexas:
-        #    - Grafo non dirixido: a compoñente do nodo é o conxunto dos seus descendentes.
-        #    - Grafo dirixido: a compoñente é a intersección entre descendentes e ascendentes 
-        #      (pode axudar ter un método `reverse` para calcular os ascendentes no grafo trasposto).
-        # 2. Devolver o conxunto coas compoñentes conexas (como conxuntos/frozensets de vértices).
-        ...
+        components: set[frozenset[T]] = set()
+        pending: set[T] = set(self.__vertices)  # Vértices aínda sen compoñente asignada
+        reversed_graph = self.reverse() if self.__directed else None
+
+        while pending:
+            vertex = next(iter(pending))
+            # Descendentes: nodos alcanzables dende o vértice
+            component = set(self.travel(vertex))
+            if reversed_graph is not None:
+                # Ascendentes: nodos que alcanzan o vértice (descendentes no trasposto)
+                component &= set(reversed_graph.travel(vertex))
+            components.add(frozenset(component))
+            pending -= component
+        return components
 
     def find_cut_vertices(self: typing.Self) -> set[T]:
         """
@@ -214,15 +273,43 @@ class Graph[T, Q]:
 
         :return: Conxunto de nodos críticos cuxa retirada desconecta parcialmente o grafo.
         """
-        # TODO: [Práctica Alumno]
-        # 1. Validar que o grafo é NON dirixido (lanzar RuntimeError se é dirixido).
-        # 2. Para cada compoñente conexa do grafo:
-        #    a. Illar a compoñente construíndo o seu subgrafo (pode axudar ter un método `subgraph`).
-        #    b. Obter o camiño DFS e a árbore de expansión a partir dun nodo inicial (pode axudar ter un método `__spanning_tree`).
-        #    c. Asignar o orde de visita ('num') e calcular a menor numeración alcanzable ('low') procesando os nodos en orde inversa á DFS.
-        #    d. Identificar os puntos de articulación segundo as condicións de raíz (dous ou máis fillos directos na árbore) e de nodos internos (num[u] <= low[v]).
-        # 3. Devolver o conxunto cos vértices de corte atopados.
-        ...
+        if self.__directed:
+            raise RuntimeError("Os vértices de corte só se calculan en grafos non dirixidos.")
+
+        cut_vertices: set[T] = set()
+        for component in self.connected_components():
+            # a. Illar a compoñente
+            sub = self.subgraph(component)
+            root = min(component)
+
+            # b. Percorrido DFS e árbore de expansión
+            order, parent = sub.__spanning_tree(root)
+            children: dict[T, list[T]] = {vertex: [] for vertex in order}
+            for vertex, vertex_parent in parent.items():
+                if vertex_parent is not None:
+                    children[vertex_parent].append(vertex)
+
+            # c. num = orde de visita; low = menor num alcanzable baixando pola
+            #    árbore e subindo como moito por unha aresta de retroceso.
+            #    En orde inversa, os fillos procésanse sempre antes que o pai.
+            num = {vertex: index for index, vertex in enumerate(order)}
+            low: dict[T, int] = {}
+            for u in reversed(order):
+                low[u] = num[u]
+                for w in sub.adjacent_vertices(u):
+                    if parent[w] == u:
+                        low[u] = min(low[u], low[w])  # Fillo na árbore
+                    elif w != parent[u]:
+                        low[u] = min(low[u], num[w])  # Aresta de retroceso
+
+            # d. Raíz: é de corte se ten dous ou máis fillos na árbore
+            if len(children[root]) >= 2:
+                cut_vertices.add(root)
+            # Nodo interno u: é de corte se algún fillo v non pode subir por riba de u
+            for u in order[1:]:
+                if any(num[u] <= low[v] for v in children[u]):
+                    cut_vertices.add(u)
+        return cut_vertices
 
     def path(self: typing.Self, source: T, target: T) -> tuple[list[T], float]:
         """
@@ -233,12 +320,40 @@ class Graph[T, Q]:
         :return: Tupla con (lista de nodos do camiño, distancia total).
                  Se non hai camiño, devolve ([], math.inf).
         """
-        # TODO: [Práctica Alumno]
-        # 1. Validar que os nodos 'source' e 'target' existen no grafo (lanzar ValueError se non existen).
-        # 2. Aplicar o algoritmo de Dijkstra utilizando unha cola de prioridade (`heapq`) para atopar 
-        #    o camiño de menor peso entre 'source' e 'target'.
-        # 3. Devolver a tupla (camiño, distancia_total). Se non existe camiño, devolver ([], math.inf).
-        ...
+        if not self.contains(source):
+            raise ValueError(f"O nodo '{source}' non existe no grafo.")
+        if not self.contains(target):
+            raise ValueError(f"O nodo '{target}' non existe no grafo.")
+
+        distances: dict[T, float] = {vertex: math.inf for vertex in self.__vertices}
+        previous: dict[T, T] = {}       # Nodo anterior no mellor camiño coñecido
+        distances[source] = 0
+        heap: list[tuple[float, T]] = [(0, source)]  # Cola de prioridade (distancia, nodo)
+        done: set[T] = set()            # Nodos con distancia xa definitiva
+
+        while heap:
+            distance, vertex = heapq.heappop(heap)  # Nodo pendente máis próximo
+            if vertex in done:
+                continue  # Entrada antiga da cola cunha distancia peor
+            done.add(vertex)
+            if vertex == target:
+                break
+            for neighbour in sorted(self.adjacent_vertices(vertex)):
+                new_distance = distance + self.weight(vertex, neighbour)
+                if new_distance < distances[neighbour]:
+                    distances[neighbour] = new_distance
+                    previous[neighbour] = vertex
+                    heapq.heappush(heap, (new_distance, neighbour))
+
+        if distances[target] == math.inf:
+            return [], math.inf
+
+        # Reconstrúe o camiño cara atrás dende o destino ata a orixe
+        path = [target]
+        while path[-1] != source:
+            path.append(previous[path[-1]])
+        path.reverse()
+        return path, distances[target]
 
     def __str__(self: typing.Self) -> str:
         """Formatea a matriz de adxacencia para a súa impresión en consola."""
