@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 import math
 from pathlib import Path
 import typing
@@ -55,12 +56,47 @@ def load(
         json.JSONDecodeError: Se o contido do arquivo non é un JSON válido.
         ValueError: Se o rango ou o factor de potencia non se poden converter a float.
     """
-    # TODO: [Práctica Alumno]
-    # 1. Cargar os nodos do arquivo JSON mediante `load_json_file(filepath)`.
-    # 2. Se `graph` é None, instanciar un novo `Graph` (dirixido se range_or_mode == "--power", non dirixido en caso contrario).
-    #    Se xa existe, engadir os novos nodos á estrutura.
-    # 3. Crear as conexións entre os nodos do grafo segundo o modo seleccionado:
-    #    - Modo potencia (`--power <val>`): Conectar dirixidamente A -> B se d(A,B) <= val * sqrt(power_A).
-    #    - Modo radio fixo (`<limit>`): Conectar simetricamente A <-> B se d(A,B) <= limit.
-    # 4. Imprimir a mensaxe de confirmación e devolver o grafo.
-    ...
+    # 1. Cargar os nodos do arquivo JSON (pode vir un só nodo ou unha lista)
+    nodes = load_json_file(filepath)
+    if isinstance(nodes, Node):
+        nodes = [nodes]
+
+    power_mode = range_or_mode == "--power"
+    if power_mode and val is None:
+        raise ValueError("O modo '--power' necesita un factor de potencia.")
+
+    # 2. Crear o grafo ou engadir os nodos ao existente
+    is_new = graph is None
+    if is_new:
+        graph = Graph(directed=power_mode)
+    new_nodes = 0
+    for node in nodes:
+        if not graph.contains(node):
+            graph.add(node)
+            new_nodes += 1
+
+    # 3. Conectar os nodos segundo o modo seleccionado
+    new_edges = 0
+    vertices = sorted(graph.vertices)
+    if power_mode:
+        # Opción B: A -> B se d(A, B) <= factor * sqrt(P_A)
+        factor = float(val)
+        for source, target in itertools.permutations(vertices, 2):
+            reach = factor * math.sqrt(source.transmitter_power_w)
+            if source.distance(target) <= reach and not graph.adjacent(source, target):
+                graph.connect(source, target, source.distance(target))
+                new_edges += 1
+    elif range_or_mode is not None:
+        # Opción A: A <-> B se d(A, B) <= alcance
+        limit = float(range_or_mode)
+        for source, target in itertools.combinations(vertices, 2):
+            if source.distance(target) <= limit and not graph.adjacent(source, target):
+                graph.connect(source, target, source.distance(target))
+                new_edges += 1
+
+    # 4. Mensaxe de confirmación
+    if is_new:
+        print(f"GRAPH CREATED WITH {new_nodes} NODES AND {new_edges} EDGES")
+    else:
+        print(f"INSERTED {new_nodes} NEW NODES AND {new_edges} NEW EDGES IN GRAPH")
+    return graph

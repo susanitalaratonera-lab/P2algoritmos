@@ -28,9 +28,18 @@ def components(graph: Graph | None) -> Graph:
     Raises:
         ValueError: Se o grafo é None.
     """
-    # TODO: [Práctica Alumno]
-    # 1. Validar que o grafo non sexa None (lanzar ValueError en caso contrario).
-    # 2. Obter o conxunto de compoñentes conexas mediante `graph.connected_components()`.
-    # 3. Imprimir o número total de compoñentes e os nodos pertencentes a cada unha delas.
-    # 4. Devolver o grafo orixinal.
-    ...
+    if graph is None:
+        print("NO GRAPH FOUND")
+        return graph
+    if not graph.vertices:
+        print("GRAPH IS EMPTY")
+        return graph
+
+    # Ordénanse os nodos de cada compoñente e as compoñentes entre si
+    # para que a saída sexa sempre a mesma
+    components = sorted(sorted(component) for component in graph.connected_components())
+    sets = ", ".join(
+        "{" + ", ".join(node.name for node in component) + "}" for component in components
+    )
+    print(f"CONNECTED COMPONENTS: [{sets}]")
+    return graph
