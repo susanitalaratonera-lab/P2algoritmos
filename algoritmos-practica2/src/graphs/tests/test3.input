@@ -1,0 +1,22 @@
+# ==========================================================
+# Test 3: Grafo DIRIXIDO en modo potencia (--power 200)
+# ==========================================================
+
+# 1. Cargar o grafo dirixido con factor de potencia 200
+LOAD data.json --power 200
+
+# 2. Imprimir a matriz de adxacencia (asimétrica)
+PRINT
+
+# 3. Percorridos BFS e DFS dende a ISS
+TRAVEL ISS WIDTH
+TRAVEL ISS DEPTH
+
+# 4. Compoñentes Fortemente Conexas (SCC)
+COMPONENTS
+
+# 5. Ruta unidireccional dende ISS cara a Sentinel-2A
+PATH ISS Sentinel-2A
+
+# 6. Intentar a ruta inversa (Sentinel-2A non ten potencia suficiente para responder a ISS)
+PATH Sentinel-2A ISS
