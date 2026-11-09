@@ -92,7 +92,8 @@ class TestTravel(unittest.TestCase):
         self.assertEqual(self.graph.travel("1"), self.graph.travel("1", Order.WIDTH))
 
     def test_dfs(self):
-        self.assertEqual(self.graph.travel("1", Order.DEPTH), ["1", "4", "9", "7", "5"])
+        # Os veciños apílanse en orde alfabética, así que sae primeiro o maior
+        self.assertEqual(self.graph.travel("1", Order.DEPTH), ["1", "5", "7", "9", "4"])
 
     def test_only_reachable_nodes(self):
         graph = undirected("A-B C-D")
@@ -275,7 +276,7 @@ class TestCommands(unittest.TestCase):
             "Meteosat-11, Sentinel-2A, Starlink-1007, Tiangong, Hispasat-30W-6]",
         )
         _, output = run_command(commands.travel, self.graph, "ISS", "DEPTH")
-        self.assertTrue(output.startswith("TRAVEL DEPTH FROM ISS: [ISS, GPS-III-01, Hubble,"))
+        self.assertTrue(output.startswith("TRAVEL DEPTH FROM ISS: [ISS, Tiangong, Starlink-1007,"))
 
     def test_travel_missing_node(self):
         _, output = run_command(commands.travel, self.graph, "Pluto", "WIDTH")
@@ -325,6 +326,20 @@ class TestCommands(unittest.TestCase):
 
 class TestInterpreter(unittest.TestCase):
     """Executa o intérprete real cun ficheiro de comandos, como se fai na corrección."""
+
+    def test_official_tests(self):
+        # Tests da profesora: tests/testN.input -> tests/testN.output (na raíz do repositorio)
+        official = sorted((ROOT.parent / "tests").glob("test*.input"))
+        self.assertTrue(official, "Non se atoparon os tests oficiais")
+        for input_file in official:
+            with self.subTest(test=input_file.name):
+                result = subprocess.run(
+                    [sys.executable, "-B", str(SRC / "interpreter.py"), str(input_file)],
+                    cwd=ROOT, capture_output=True, text=True, encoding="utf-8",
+                )
+                expected = input_file.with_suffix(".output").read_text(encoding="utf-8")
+                self.assertEqual(result.stderr, "")
+                self.assertEqual(result.stdout.splitlines(), expected.splitlines())
 
     def test_full_script(self):
         script = f"""
