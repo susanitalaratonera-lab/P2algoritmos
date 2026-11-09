@@ -185,23 +185,19 @@ class Graph[T, Q]:
         if not self.contains(start):
             raise ValueError(f"O nodo '{start}' non existe no grafo.")
 
-        # Percorrido en profundidade (DFS): reutiliza a árbore de expansión
-        if order == Order.DEPTH:
-            visited, _ = self.__spanning_tree(start)
-            return visited
-
-        # Percorrido en anchura (BFS): cola FIFO
         visited: list[T] = []
-        seen: set[T] = {start}       # Nodos xa engadidos á cola (para non repetilos)
-        queue: deque[T] = deque([start])
-        while queue:
-            vertex = queue.popleft()  # Saca polo principio (o máis antigo)
+        seen: set[T] = {start}       # Nodos xa engadidos á cola/pila (para non repetilos)
+        pending: deque[T] = deque([start])
+        while pending:
+            # BFS: cola FIFO, saca polo principio (o máis antigo)
+            # DFS: pila LIFO, saca polo final (o máis recente)
+            vertex = pending.popleft() if order == Order.WIDTH else pending.pop()
             visited.append(vertex)
             # Veciños en orde alfabética para que o percorrido sexa determinista
             for neighbour in sorted(self.adjacent_vertices(vertex)):
                 if neighbour not in seen:
                     seen.add(neighbour)
-                    queue.append(neighbour)
+                    pending.append(neighbour)
         return visited
 
     def __spanning_tree(self: typing.Self, start: T) -> tuple[list[T], dict[T, T | None]]:
@@ -221,8 +217,9 @@ class Graph[T, Q]:
                 continue  # Xa visitado por outro camiño
             parent[vertex] = vertex_parent
             visited.append(vertex)
-            # Apílanse en orde inversa para que o alfabeticamente menor saia primeiro
-            for neighbour in sorted(self.adjacent_vertices(vertex), reverse=True):
+            # Apílanse en orde alfabética (criterio de determinismo): como a pila
+            # saca primeiro o último en entrar, explórase antes o veciño maior
+            for neighbour in sorted(self.adjacent_vertices(vertex)):
                 if neighbour not in parent:
                     stack.append((neighbour, vertex))
         return visited, parent
@@ -273,7 +270,7 @@ class Graph[T, Q]:
         reversed_graph = self.reverse() if self.__directed else None
 
         while pending:
-            vertex = next(iter(pending))
+            vertex = min(pending)  # Sempre o mesmo nodo de partida (determinismo)
             # Descendentes: nodos alcanzables dende o vértice
             component = set(self.travel(vertex))
             if reversed_graph is not None:
@@ -302,7 +299,7 @@ class Graph[T, Q]:
             raise RuntimeError("Os vértices de corte só se calculan en grafos non dirixidos.")
 
         cut_vertices: set[T] = set()
-        for component in self.connected_components():
+        for component in sorted(self.connected_components(), key=lambda c: min(c)):
             # a. Illar a compoñente
             sub = self.subgraph(component)
             root = min(component)
