@@ -1,0 +1,22 @@
+# =================================================================================
+# Test 4: Grafo DIRIXIDO en modo potencia con factor de alcance alto (--power 500)
+# =================================================================================
+
+# 1. Cargar o grafo dirixido con factor de alcance 500
+LOAD data.json --power 500
+
+# 2. Imprimir a matriz de adxacencia asimétrica
+PRINT
+
+# 3. Percorridos BFS e DFS dende a ISS (inclúe o nodo MEO Galileo-FOC-FM1)
+TRAVEL ISS WIDTH
+TRAVEL ISS DEPTH
+
+# 4. Compoñentes Fortemente Conexas (os 5 nodos LEO fanse conexos entre si)
+COMPONENTS
+
+# 5. Ruta directa de ida dende ISS a Sentinel-2A
+PATH ISS Sentinel-2A
+
+# 6. Ruta de retorno con 2 saltos (Sentinel-2A -> Hubble -> ISS)
+PATH Sentinel-2A ISS
