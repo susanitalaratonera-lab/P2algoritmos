@@ -1,0 +1,25 @@
+# ==========================================================
+# Test 2: Grafo NON DIRIXIDO con alcance ampliado (15.000 km)
+# ==========================================================
+
+# 1. Cargar o grafo con radio de 15.000 km
+LOAD data.json 15000
+
+# 2. Imprimir a matriz de adxacencia
+PRINT
+
+# 3. Percorridos dende ISS
+TRAVEL ISS WIDTH
+TRAVEL ISS DEPTH
+
+# 4. Compoñentes conexas (compoñente principal ampliada a 5 satélites)
+COMPONENTS
+
+# 5. Puntos de articulación (debe resultar baleiro)
+FIND_CUT_VERTICES
+
+# 6. Ruta óptima directa entre ISS e Tiangong
+PATH ISS Tiangong
+
+# 7. Ruta cara a un satélite illado
+PATH ISS "James Webb"
